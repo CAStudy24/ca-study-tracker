@@ -54,6 +54,8 @@ if name:
     with st.expander("📂 Import Previous Tracker (.xlsx)"):
         uploaded = st.file_uploader("Upload Excel file to continue from previous sessions", type=["xlsx"])
         if uploaded:
+            # Clear existing session data to avoid duplication
+            st.session_state["data"] = pd.DataFrame(columns=["Date", "Subject", "Minutes"])
             df = pd.read_excel(uploaded)
             st.session_state["data"] = pd.concat([st.session_state["data"], df], ignore_index=True)
             st.success("Previous data imported successfully!")
