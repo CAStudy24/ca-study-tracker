@@ -77,12 +77,19 @@ if name:
 
     if not st.session_state["data"].empty:
         df = st.session_state["data"]
-        st.dataframe(df, use_container_width=True)
+
+        # 🛠️ Sanitize before display
+        safe_df = df.copy()
+        safe_df["Date"] = pd.to_datetime(safe_df["Date"]).dt.date
+        safe_df["Subject"] = safe_df["Subject"].astype(str)
+        safe_df["Minutes"] = pd.to_numeric(safe_df["Minutes"], errors="coerce").fillna(0).astype(int)
+
+        st.dataframe(safe_df, use_container_width=True)
 
         # Excel export
         output = io.BytesIO()
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
-            df.to_excel(writer, index=False)
+            safe_df.to_excel(writer, index=False)
         output.seek(0)
 
         st.download_button(
