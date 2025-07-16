@@ -86,7 +86,7 @@ if name:
         safe_df["Subject"] = safe_df["Subject"].astype(str)
         safe_df["Minutes"] = pd.to_numeric(safe_df["Minutes"], errors="coerce").fillna(0).astype(int)
 
-        st.dataframe(safe_df, use_container_width=True)
+        st.dataframe(safe_df.drop(columns=["Week"]), use_container_width=True)
 
         # Excel export
         output = io.BytesIO()
@@ -106,7 +106,15 @@ if name:
         week_summary = df.groupby(["Week", "Subject"])["Minutes"].sum().reset_index()
         chart = px.bar(week_summary, x="Week", y="Minutes", color="Subject", barmode="group",
                        title="📅 Weekly Study Summary")
-        st.plotly_chart(chart, use_container_width=True)
+        
+        # Dropdown to select week for chart display
+        available_weeks = week_summary["Week"].unique().tolist()
+        selected_week = st.selectbox("📆 Select a week to view study summary", available_weeks)
+        filtered_week_data = week_summary[week_summary["Week"] == selected_week]
+        week_chart = px.bar(filtered_week_data, x="Subject", y="Minutes", color="Subject", barmode="group",
+                            title=f"Study Summary for {selected_week}")
+        st.plotly_chart(week_chart, use_container_width=True)
+    
 
     else:
         st.info("No data entered yet.")
