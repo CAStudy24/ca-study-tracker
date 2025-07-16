@@ -86,7 +86,7 @@ if name:
         safe_df["Subject"] = safe_df["Subject"].astype(str)
         safe_df["Minutes"] = pd.to_numeric(safe_df["Minutes"], errors="coerce").fillna(0).astype(int)
 
-        st.dataframe(safe_df.drop(columns=["Week"]), use_container_width=True)
+        st.dataframe(safe_df.drop(columns=["Week"], errors="ignore"), use_container_width=True)
 
         # Excel export
         output = io.BytesIO()
