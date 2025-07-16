@@ -16,22 +16,11 @@ def load_quotes():
     except:
         return ["Stay consistent. You are getting closer every day."] * 365
 
-# Load badges (dummy loader for now)
-def load_badges():
-    try:
-        with open("badges.json", "r") as f:
-            return json.load(f)["badges"]
-    except:
-        return []
-
 # Initialize session state
 if "data" not in st.session_state:
     st.session_state["data"] = pd.DataFrame(columns=["Date", "Subject", "Minutes"])
-
-# Light/Dark Mode Toggle
-theme = st.radio("Choose Theme", ["🌞 Light Mode", "🌙 Dark Mode"], horizontal=True)
-if theme == "🌙 Dark Mode":
-    st.markdown('<style>body { background-color: #0e1117; color: white; }</style>', unsafe_allow_html=True)
+if "exam_date" not in st.session_state:
+    st.session_state["exam_date"] = None
 
 # App starts here
 st.title("📘 CA Final Study Tracker")
@@ -44,6 +33,20 @@ if name:
     quotes = load_quotes()
     today_index = (date.today() - date(date.today().year, 1, 1)).days % 365
     st.markdown(f"💬 **Motivation of the Day:** _{quotes[today_index]}_")
+
+    # Exam Countdown Section
+    with st.expander("📅 Set Your Exam Date (Once)"):
+        selected_date = st.date_input("Select your CA Final exam date", value=st.session_state["exam_date"] or date.today())
+        if st.button("Set Exam Date"):
+            st.session_state["exam_date"] = selected_date
+            st.success(f"Exam date set to {selected_date.strftime('%d %B %Y')}")
+
+    if st.session_state["exam_date"]:
+        days_remaining = (st.session_state["exam_date"] - date.today()).days
+        if days_remaining >= 0:
+            st.markdown(f"⏳ **{days_remaining} days** remaining until your CA Final exam on **{st.session_state['exam_date'].strftime('%d %b %Y')}**.")
+        else:
+            st.markdown(f"✅ Exam date passed on {st.session_state['exam_date'].strftime('%d %b %Y')}")
 
     st.divider()
 
