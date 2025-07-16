@@ -4,6 +4,7 @@ import pandas as pd
 import io
 import json
 from datetime import date, datetime
+import plotly.express as px
 
 st.set_page_config(page_title="CA Final Study Tracker", layout="centered")
 
@@ -27,6 +28,11 @@ def load_badges():
 if "data" not in st.session_state:
     st.session_state["data"] = pd.DataFrame(columns=["Date", "Subject", "Minutes"])
 
+# Light/Dark Mode Toggle
+theme = st.radio("Choose Theme", ["🌞 Light Mode", "🌙 Dark Mode"], horizontal=True)
+if theme == "🌙 Dark Mode":
+    st.markdown('<style>body { background-color: #0e1117; color: white; }</style>', unsafe_allow_html=True)
+
 # App starts here
 st.title("📘 CA Final Study Tracker")
 
@@ -41,7 +47,14 @@ if name:
 
     st.divider()
 
-    # Input section
+    # Import section
+    with st.expander("📂 Import Previous Tracker (.xlsx)"):
+        uploaded = st.file_uploader("Upload Excel file to continue from previous sessions", type=["xlsx"])
+        if uploaded:
+            df = pd.read_excel(uploaded)
+            st.session_state["data"] = pd.concat([st.session_state["data"], df], ignore_index=True)
+            st.success("Previous data imported successfully!")
+
     st.header("📥 Add Study Entry")
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -60,12 +73,13 @@ if name:
     st.header("📊 Study Log This Session")
 
     if not st.session_state["data"].empty:
-        st.dataframe(st.session_state["data"], use_container_width=True)
+        df = st.session_state["data"]
+        st.dataframe(df, use_container_width=True)
 
         # Excel export
         output = io.BytesIO()
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
-            st.session_state["data"].to_excel(writer, index=False)
+            df.to_excel(writer, index=False)
         output.seek(0)
 
         st.download_button(
@@ -74,5 +88,13 @@ if name:
             file_name="Study_Tracker.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
+
+        # Weekly Summary Graph
+        df["Week"] = pd.to_datetime(df["Date"]).dt.to_period("W").astype(str)
+        week_summary = df.groupby(["Week", "Subject"])["Minutes"].sum().reset_index()
+        chart = px.bar(week_summary, x="Week", y="Minutes", color="Subject", barmode="group",
+                       title="📅 Weekly Study Summary")
+        st.plotly_chart(chart, use_container_width=True)
+
     else:
         st.info("No data entered yet.")
